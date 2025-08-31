@@ -1,35 +1,61 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
+import { Chess, SQUARES } from 'chess.js';
 import './App.css'
+import Chessground from '@react-chess/chessground'
+import "chessground/assets/chessground.base.css";
+import "chessground/assets/chessground.brown.css";
+import "chessground/assets/chessground.cburnett.css";
+import { useState } from 'react';
+import type { Config } from 'chessground/config';
+import type { Key } from 'chessground/types';
 
 function App() {
-  const [count, setCount] = useState(0)
+    const [fen, setFen] = useState(
+        "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
+    );
 
-  return (
-    <>
-      <div>
-        <a href="https://vite.dev" target="_blank">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
-      </div>
-      <h1>Vite + React</h1>
-      <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
-        </button>
-        <p>
-          Edit <code>src/App.tsx</code> and save to test HMR
-        </p>
-      </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
-    </>
-  )
+    const chess = new Chess(fen);
+    const turnColor = chess.turn() === "w" ? "white" : "black";
+    const handleMove = (from: string, to: string) => {
+        chess.move({ from, to });
+        setFen(chess.fen());
+    };
+    const size = 700
+    const toDests = (): Map<Key, Key[]> => {
+        const dests = new Map<Key, Key[]>()
+        SQUARES.forEach((s) => {
+            const ms = chess.moves({ square: s, verbose: true })
+            if (ms.length)
+                dests.set(
+                    s,
+                    ms.map((m) => m.to)
+                )
+        })
+        return dests;
+    }
+    const config: Config = {
+        fen: fen,
+        turnColor: turnColor,
+        movable: {
+            free: false,
+            color: turnColor,
+            dests: toDests(),
+            rookCastle: true,
+        },
+        events: {
+            move: handleMove
+        }
+
+    }
+
+    return (
+        <>
+            <Chessground
+                width={size}
+                height={size}
+                config={config}
+            />
+        </>
+    )
 }
 
 export default App
